@@ -1,6 +1,6 @@
 # Jovian Wake — Callisto Playground
 
-A small first-person Godot 4 experiment: stand on Callisto, see Jupiter, walk to a six-wheel rover, drive across a rocky ice field, and get back out.
+A small first-person Godot 4 experiment: stand on Callisto, see Jupiter, drive a six-wheel rover to a crater, deploy a survey instrument on foot, and return to the landing module.
 
 ![Callisto landing site and rover, rendered in Godot](docs/playground.png)
 
@@ -10,7 +10,7 @@ This is a separate project from the working TypeScript cruise deckbuilder in `..
 
 Double-click **`Play.cmd`**. It launches the current exported game, or finds a local Godot installation and runs the source. This workspace's existing Spiritbound/Range Club Godot installation is also detected.
 
-You can run **`builds/windows/CallistoPlayground-v0.2.exe`** directly without the editor. Keep its adjacent `.pck` file with it. The generated build is ignored by Git. The earlier executable remains available so an ongoing playtest is not interrupted; `Play.cmd` prefers v0.2. Close the old window and relaunch to use updated controls and sky.
+You can run **`builds/windows/CallistoPlayground-v0.3.exe`** directly without the editor. Keep its adjacent `.pck` file with it. The generated build is ignored by Git. Earlier executables remain available so an ongoing playtest is not interrupted; `Play.cmd` prefers v0.3. Close the old window and relaunch to use the crater survey and corrected module sign.
 
 To edit the prototype, import `project.godot` in **Godot 4.7.2 Standard** and press **F5**. The Compatibility renderer requires OpenGL 3.3; no plugins or downloaded assets are needed.
 
@@ -23,7 +23,7 @@ Use a standard Xbox-style gamepad. Hot-plugging works through Godot's controller
 | Left stick | Walk | Steer; forward/back also drives |
 | Right stick | Look | Look around the cockpit |
 | A | Jump | — |
-| X | Enter nearby rover | Exit and park rover |
+| X | Enter nearby rover / deploy the survey instrument | Exit and park rover |
 | LB | Move faster while held | — |
 | RT / LT | LT: hold visor zoom | Forward / reverse, with analog throttle |
 | B | — | Brake |
@@ -34,7 +34,18 @@ The sticks have deadzones and the look stick uses a gentle response curve for fi
 
 ## Keyboard and mouse
 
-WASD moves or drives; mouse looks. Space jumps on foot and brakes in the rover. E enters/exits. Shift moves faster on foot. Hold the right mouse button for visor zoom. R resets. Esc pauses or resumes; clicking the window also resumes after mouse release.
+WASD moves or drives; mouse looks. Space jumps on foot and brakes in the rover. E enters/exits or deploys the instrument near Survey 01. Shift moves faster on foot. Hold the right mouse button for visor zoom. R resets. Esc pauses or resumes; clicking the window also resumes after mouse release.
+
+## Crater survey
+
+1. Enter the rover with **X / E**. Follow the objective's distance and left/right/ahead/behind guidance toward the crater rim. Orange stakes suggest a clear driving approach and a parking area.
+2. Park near the exposed blue ice and exit. Cross the shallow crater to the orange **SURVEY / 01** marker on the far rim.
+3. Stand near the marker and press **X / E** to deploy the instrument. It appears beside the marker, and the objective switches to returning home.
+4. Return to **WAKE / 01**, exit the rover, and approach the module's door. The survey completes; free exploration continues.
+
+**Y / R** resets the whole trip and removes the deployed instrument. The survey has no countdown, inventory, resource cost, or persistent save. Deployment requires nearby grounded footing and is blocked while paused or seated. Completion requires returning on foot; driving past home alone does not finish it.
+
+![Crater rim instrument deployed](docs/survey.png)
 
 ## What's in the playground
 
@@ -57,15 +68,16 @@ The terrain is an authored mathematical playground, not a reconstruction of Call
 
 Set `CALLISTO_GODOT` or pass `-GodotPath 'C:\path\to\godot.exe'` to choose another compatible engine. Windows export needs matching Godot export templates. Captures require a graphical renderer and write ignored PNGs to `artifacts/`.
 
-Automated checks run the actual 3D collision world and simulated keyboard/gamepad events. They cover landing, walking/stopping, jump/gravity and conserved horizontal momentum, rover range and seating, trigger driving/reverse, steering/braking, stick drift/look, visor zoom, pause/reset, blocked exits, terrain boundaries, crater collision, fall recovery, and astronomical apparent sizes. They do not establish physical controller compatibility or perceived handling comfort. Those require manual playtesting.
+Automated checks run the actual 3D collision world and simulated keyboard/gamepad events. They cover landing, walking/stopping, jump/gravity and conserved horizontal momentum, rover range and seating, trigger driving/reverse, steering/braking, stick drift/look, visor zoom, pause/reset, blocked exits, terrain boundaries, crater collision, fall recovery, astronomical apparent sizes, driving the survey approach, deployment restrictions, returning, and resetting the excursion. They do not establish physical controller compatibility or perceived handling comfort. Those require manual playtesting.
 
-On October 13, 2026, all **54 checks** passed in both source and exported Windows-pack runs. Godot import/export and a Windows executable startup check completed without script/runtime errors. Actual rendered views were inspected on foot, approaching the rover, in the cockpit, after exit, and through the visor at Jupiter, the Sun, and Ganymede. The original exported game's native window was inspected. Physical gamepad feel remains a manual playtest item.
+On October 13, 2026, all **71 checks** passed in both source and exported Windows-pack runs. Godot import/export and a Windows executable startup check completed without script/runtime errors. Actual rendered views were inspected on foot, at the corrected building sign, approaching the rover, in the cockpit, after exit, through the visor, and during each survey stage. The original exported game's native window was inspected. Physical gamepad feel and whether the trip is fun remain manual playtest items.
 
 ## Code map
 
 | File | Responsibility |
 | --- | --- |
 | `game/playground.gd` | World setup, interaction, safe exit, reset, pause, input routing |
+| `game/survey.gd` | One crater excursion, instrument visuals, deployment/return state, guidance |
 | `game/terrain.gd` | Immutable height field, low-poly mesh, matching ground collider |
 | `game/astronaut.gd` | First-person camera, walking, jumping, low gravity |
 | `game/rover.gd` | Primitive rover model and arcade movement |
@@ -84,5 +96,6 @@ Movement uses Godot's [CharacterBody3D](https://docs.godotengine.org/en/stable/c
 2. Approach the rover and use X / E. Drive over the shallow crater slopes, steer, reverse, and brake.
 3. Look around from the cockpit. Exit, walk away, and reenter. Try Y / R and Menu / Esc.
 4. Check a physical controller's sticks, triggers, buttons, hot-plugging, and comfortable look speed.
+5. Finish the crater survey. Is the direction guidance sufficient? Does parking and getting out make the trip more interesting? Is the walk across the crater enjoyable?
 
 No inventory, crafting, survival meters, progression, AI services, voxel framework, or networking is included.

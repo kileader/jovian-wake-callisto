@@ -6,12 +6,14 @@ const Astronaut = preload("res://game/astronaut.gd")
 const Rover = preload("res://game/rover.gd")
 const HUD = preload("res://game/hud.gd")
 const JovianSky = preload("res://game/sky.gd")
+const SurveyTrip = preload("res://game/survey.gd")
 const ENTER_DISTANCE := 3.8
 const SAFE_RADIUS := 108.0
 
 var astronaut = Astronaut.new()
 var rover = Rover.new()
 var hud = HUD.new()
+var survey = SurveyTrip.new()
 var sky_objects: Node3D
 var paused := false
 var note := ""
@@ -24,6 +26,7 @@ func _ready() -> void:
 	var terrain := Terrain.new()
 	add_child(terrain)
 	terrain.build()
+	add_child(survey)
 	create_landmarks()
 	add_child(rover)
 	add_child(astronaut)
@@ -124,6 +127,10 @@ func create_landmarks() -> void:
 		var z := rng.randf_range(-100.0, 100.0)
 		if Vector2(x, z).length() < 17.0:
 			continue
+		if Vector2(x - SurveyTrip.RIM.x, z - SurveyTrip.RIM.z).length() < 6.0:
+			continue # Leave clear footing around the instrument deployment site.
+		if SurveyTrip.on_approach(x, z):
+			continue # Keep an unobstructed driving approach to the crater.
 		var rock := SphereMesh.new()
 		rock.radial_segments = 6
 		rock.rings = 3
@@ -178,6 +185,7 @@ func boundary(at: Vector3, size: Vector3) -> void:
 	add_child(body)
 
 func reset_site() -> void:
+	survey.reset()
 	rover.occupied = false
 	rover.stop()
 	rover.position = Vector3(4.0, 0.12, -7.0)
@@ -193,7 +201,7 @@ func reset_site() -> void:
 	astronaut.head.rotation.x = astronaut.pitch
 	astronaut.camera.make_current()
 	astronaut.camera.fov = Astronaut.NORMAL_FOV
-	show_note("Walk to the rover. Jupiter is ahead.", 4.0)
+	show_note("Take the rover to Survey 01. Deploy the instrument on foot.", 4.0)
 
 func near_rover() -> bool:
 	# Require proximity to the body at ground level, not just the horizontal map.
@@ -202,6 +210,10 @@ func near_rover() -> bool:
 func interact() -> bool:
 	if rover.occupied:
 		return exit_rover()
+	if survey.can_deploy(astronaut):
+		survey.deploy()
+		show_note("INSTRUMENT DEPLOYED — Return to WAKE / 01.", 3.0)
+		return true
 	if not near_rover():
 		return false
 	rover.occupied = true
@@ -299,11 +311,16 @@ func _process(delta: float) -> void:
 			note = ""
 		if astronaut.position.y < -12.0 or rover.position.y < -12.0:
 			reset_site()
+		if survey.check_return(astronaut, rover.occupied):
+			show_note("SURVEY COMPLETE — Back at the landing site.", 4.0)
 	var body: Node3D = rover if rover.occupied else astronaut
 	if maxf(absf(body.position.x), absf(body.position.z)) > 103.0 and note.is_empty():
 		note = "Survey boundary — turn back toward the landing site."
 		note_time = 0.15
 	hud.update(rover.occupied, near_rover(), rover.speed, paused, note, not rover.occupied and astronaut.camera.fov < 50.0)
+	hud.objective.text = survey.guidance(camera, body.global_position)
+	if not rover.occupied and survey.can_deploy(astronaut) and note.is_empty():
+		hud.prompt.text = "X — DEPLOY SURVEY INSTRUMENT" if hud.pad_mode else "E — DEPLOY SURVEY INSTRUMENT"
 	if not rover.occupied and astronaut.camera.fov < 50.0:
 		var target: String = sky_objects.focused_body(camera)
 		hud.status.text += "   /   VISOR" + (" — " + target.to_upper() if not target.is_empty() else "")

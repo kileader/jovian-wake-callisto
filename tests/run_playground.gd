@@ -2,6 +2,7 @@ extends SceneTree
 
 const Playground = preload("res://game/playground.gd")
 const JovianSky = preload("res://game/sky.gd")
+const SurveyTrip = preload("res://game/survey.gd")
 var game
 var checks := 0
 var failures := 0
@@ -234,6 +235,85 @@ func run() -> void:
 	game.rover.position.y = -15.0
 	await frames(2)
 	check(game.rover.position.y > -1.0, "Fall recovery returns to the landing site")
+
+	# Drive the authored approach in the actual collision world before checking
+	# the new survey interaction and return conditions.
+	game.reset_site()
+	await frames(35)
+	check(game.survey.stage == SurveyTrip.Stage.OUTBOUND and not game.survey.instrument.visible, "Survey starts outbound with an undeployed instrument")
+	check(not game.survey.can_deploy(game.astronaut), "Instrument cannot be deployed remotely")
+	game.astronaut.position = game.rover.position + Vector3(2.3, 0.08, 0)
+	await frames(15)
+	pad_button(JOY_BUTTON_X, true)
+	await frames(2)
+	pad_button(JOY_BUTTON_X, false)
+	for destination in [SurveyTrip.APPROACH, SurveyTrip.PARKING]:
+		for tick in range(700):
+			var offset: Vector3 = destination - game.rover.position
+			offset.y = 0.0
+			if offset.length() < 2.5:
+				break
+			var desired_heading := atan2(-offset.x, -offset.z)
+			var error := wrapf(desired_heading - game.rover.rotation.y, -PI, PI)
+			var steering := clampf(-error * 2.0, -1.0, 1.0)
+			pad_axis(JOY_AXIS_LEFT_X, steering)
+			pad_axis(JOY_AXIS_TRIGGER_RIGHT, 0.5)
+			await frames(1)
+		check(Vector2(game.rover.position.x - destination.x, game.rover.position.z - destination.z).length() < 3.0, "Rover can reach the survey approach waypoint")
+	pad_axis(JOY_AXIS_LEFT_X, 0.0)
+	pad_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
+	pad_button(JOY_BUTTON_B, true)
+	await frames(35)
+	pad_button(JOY_BUTTON_B, false)
+	pad_button(JOY_BUTTON_X, true)
+	await frames(2)
+	pad_button(JOY_BUTTON_X, false)
+	check(not game.rover.occupied and game.survey.stage == SurveyTrip.Stage.OUTBOUND, "X exits the rover without remotely deploying the instrument")
+
+	game.astronaut.position = game.survey.target + Vector3(1.4, 1.0, 0)
+	game.astronaut.velocity = Vector3.ZERO
+	await frames(100)
+	check(game.survey.can_deploy(game.astronaut), "Rim has clear, grounded footing for deployment")
+	game.set_paused(true)
+	pad_button(JOY_BUTTON_X, true)
+	await frames(2)
+	pad_button(JOY_BUTTON_X, false)
+	check(game.survey.stage == SurveyTrip.Stage.OUTBOUND, "Pause blocks instrument deployment")
+	game.set_paused(false)
+	pad_button(JOY_BUTTON_A, true)
+	await frames(2)
+	pad_button(JOY_BUTTON_A, false)
+	pad_button(JOY_BUTTON_X, true)
+	await frames(2)
+	pad_button(JOY_BUTTON_X, false)
+	check(game.survey.stage == SurveyTrip.Stage.OUTBOUND, "Cannot deploy while jumping")
+	await frames(180)
+	game.note = ""
+	await frames(2)
+	check(game.hud.prompt.text.contains("DEPLOY"), "Gamepad prompt shows the survey action near the marker")
+	pad_button(JOY_BUTTON_X, true)
+	await frames(2)
+	pad_button(JOY_BUTTON_X, false)
+	check(game.survey.stage == SurveyTrip.Stage.RETURNING and game.survey.instrument.visible, "X deploys the instrument and starts the return leg")
+	check(not game.survey.deploy(), "Repeated deployment cannot restart the survey")
+	check(game.hud.objective.text.contains("Return"), "Return guidance replaces the outbound objective")
+	# Let the physics body refresh its contact state after fixture teleportation
+	# before the world checks arrival (normal gameplay never teleports here).
+	game.set_process(false)
+	game.astronaut.position = SurveyTrip.HOME + Vector3.UP * 1.5
+	game.astronaut.velocity = Vector3.ZERO
+	await frames(3)
+	game.set_process(true)
+	await frames(2)
+	check(game.survey.stage == SurveyTrip.Stage.RETURNING, "Return requires standing on the ground")
+	await frames(120)
+	check(game.survey.stage == SurveyTrip.Stage.COMPLETE, "Returning on foot completes the survey")
+	check(not game.survey.check_return(game.astronaut, false), "Completion is reported once")
+	check(game.astronaut.active and not game.paused, "Free exploration continues after completion")
+	pad_button(JOY_BUTTON_Y, true)
+	await frames(2)
+	pad_button(JOY_BUTTON_Y, false)
+	check(game.survey.stage == SurveyTrip.Stage.OUTBOUND and not game.survey.instrument.visible, "Y resets the whole survey")
 	print("Callisto Playground: %d checks, %d failures" % [checks, failures])
 	game.queue_free()
 	await process_frame

@@ -50,4 +50,20 @@ func run() -> void:
 	game.astronaut.camera.look_at(game.sky_objects.get_node("Ganymede").global_position, Vector3.UP)
 	await shot("ganymede-visor")
 	Input.action_release("visor_zoom")
+	game.reset_site()
+	game.note = ""
+	game.astronaut.position = Vector3(42, 0, -52)
+	game.astronaut.position.y = Playground.Terrain.height_at(42, -52) + 0.07
+	game.astronaut.camera.rotation = Vector3.ZERO
+	game.astronaut.camera.look_at(game.survey.target + Vector3.UP * 1.4, Vector3.UP)
+	await shot("survey-approach")
+	game.astronaut.position = game.survey.target + Vector3(1.8, 0.1, 1.8)
+	game.astronaut.camera.look_at(game.survey.target + Vector3.UP * 1.85, Vector3.UP)
+	await shot("survey-marker")
+	game.survey.deploy()
+	await shot("survey-deployed")
+	game.astronaut.position = Vector3(-9, 0.07, 1)
+	game.survey.stage = Playground.SurveyTrip.Stage.COMPLETE
+	game.astronaut.camera.look_at(Vector3(-9, 1.8, 3), Vector3.UP)
+	await shot("survey-complete")
 	quit()

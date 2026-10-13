@@ -2,6 +2,7 @@ extends CanvasLayer
 
 var title: Label
 var status: Label
+var objective: Label
 var controls: Label
 var prompt: Label
 var pause_message: Label
@@ -19,6 +20,8 @@ func _ready() -> void:
 	title.position = Vector2(28, 24)
 	status = label(root, 15, Color(0.59, 0.71, 0.74))
 	status.position = Vector2(29, 59)
+	objective = label(root, 17, Color(0.93, 0.75, 0.46))
+	objective.position = Vector2(29, 91)
 	controls = label(root, 15, Color(0.78, 0.84, 0.84))
 	controls.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	controls.offset_left = 28
@@ -61,9 +64,9 @@ func label(parent: Control, size: int, color: Color) -> Label:
 func update(occupied: bool, near_rover: bool, speed: float, paused: bool, note: String, zoomed: bool = false) -> void:
 	status.text = "SURFACE GRAVITY  1.24 m/s²   /   " + ("ROVER  %02d km/h" % roundi(absf(speed) * 3.6) if occupied else "ON FOOT")
 	if pad_mode:
-		controls.text = "LS steer · RT drive · LT reverse · B brake · RS look\nX exit rover · Y reset site · Menu pause" if occupied else "LS walk · RS look · A jump · LB hurry\nX enter rover · LT visor zoom · Y reset · Menu pause"
+		controls.text = "LS steer · RT drive · LT reverse · B brake · RS look\nX exit rover · Y reset site · Menu pause" if occupied else "LS walk · RS look · A jump · LB hurry\nX interact · LT visor zoom · Y reset · Menu pause"
 	else:
-		controls.text = "W/S drive · A/D steer · Space brake · Mouse look\nE exit rover · R reset site · Esc pause" if occupied else "WASD walk · Mouse look · Space jump · Shift hurry\nE enter rover · RMB visor zoom · R reset · Esc pause"
+		controls.text = "W/S drive · A/D steer · Space brake · Mouse look\nE exit rover · R reset site · Esc pause" if occupied else "WASD walk · Mouse look · Space jump · Shift hurry\nE interact · RMB visor zoom · R reset · Esc pause"
 	prompt.text = ("X — EXIT ROVER" if pad_mode else "E — EXIT ROVER") if occupied else ("X — ENTER ROVER" if pad_mode else "E — ENTER ROVER") if near_rover else ""
 	if not note.is_empty():
 		prompt.text = note
