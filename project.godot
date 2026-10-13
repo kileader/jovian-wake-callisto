@@ -3,7 +3,9 @@ config_version=5
 
 [application]
 config/name="Jovian Wake — Callisto Playground"
-run/main_scene="res://game/playground.tscn"
+run/main_scene="res://game/startup.tscn"
+boot_splash/show_image=false
+boot_splash/bg_color=Color(0, 0, 0, 1)
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 

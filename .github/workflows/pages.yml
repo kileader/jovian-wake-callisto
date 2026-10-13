@@ -28,6 +28,8 @@ jobs:
         run: godot --headless --path . --editor --import --quit
       - name: Check movement, gamepads, sky, and survey
         run: godot --headless --fixed-fps 60 --path . --script res://tests/run_playground.gd
+      - name: Check studio splash and startup
+        run: godot --headless --path . --script res://tests/run_startup.gd
       - name: Export browser build
         run: |
           mkdir -p builds/web

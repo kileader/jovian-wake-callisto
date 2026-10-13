@@ -2,6 +2,8 @@
 
 A small first-person Godot 4 experiment: stand on Callisto, see Jupiter, drive a six-wheel rover to a crater, deploy a survey instrument on foot, and return to the landing module.
 
+The game opens with the Phicid Productions studio splash, then enters the playground. Press a key, mouse button, or gamepad button to skip the intro. Resetting the landing site does not replay it.
+
 ![Callisto landing site and rover, rendered in Godot](docs/playground.png)
 
 **[Play in your browser](https://kileader.github.io/jovian-wake-callisto/)** · **[GitHub repository](https://github.com/kileader/jovian-wake-callisto)**
@@ -40,7 +42,7 @@ Use a standard Xbox-style gamepad. Hot-plugging works through Godot's controller
 | Y | Reset the landing site | Reset the landing site |
 | Menu / Start | Pause / resume | Pause / resume |
 
-The sticks have deadzones and the look stick uses a gentle response curve for fine aiming. The game starts directly in first person; the whole loop works without a mouse. Focus loss pauses movement; Menu resumes. Pause is a small overlay, not a menu system.
+The sticks have deadzones and the look stick uses a gentle response curve for fine aiming. After the studio splash, the game starts in first person; the whole loop works without a mouse. Focus loss pauses movement; Menu resumes. Pause is a small overlay, not a menu system.
 
 ## Keyboard and mouse
 
@@ -83,12 +85,16 @@ For a local browser preview after exporting Web, run `node tools/preview-web.cjs
 
 Automated checks run the actual 3D collision world and simulated keyboard/gamepad events. They cover landing, walking/stopping, jump/gravity and conserved horizontal momentum, rover range and seating, trigger driving/reverse, steering/braking, stick drift/look, visor zoom, pause/reset, blocked exits, terrain boundaries, crater collision, fall recovery, astronomical apparent sizes, driving the survey approach, deployment restrictions, returning, and resetting the excursion. They do not establish physical controller compatibility or perceived handling comfort. Those require manual playtesting.
 
+Startup checks also cover the studio fade, automatic handoff, keyboard/mouse/gamepad skipping, ignored key repeats and stick drift, skip input isolation, and reset without replaying the intro.
+
 On October 13, 2026, all **71 checks** passed in both source and exported Windows-pack runs. Godot import/export and a Windows executable startup check completed without script/runtime errors. Actual rendered views were inspected on foot, at the corrected building sign, approaching the rover, in the cockpit, after exit, through the visor, and during each survey stage. The original exported game's native window was inspected. Physical gamepad feel and whether the trip is fun remain manual playtest items.
 
 ## Code map
 
 | File | Responsibility |
 | --- | --- |
+| `game/startup.tscn` | Shared studio splash with the playground as its destination |
+| `studio/` | Reusable Phicid Productions logo, fades, and skip handling |
 | `game/playground.gd` | World setup, interaction, safe exit, reset, pause, input routing |
 | `game/survey.gd` | One crater excursion, instrument visuals, deployment/return state, guidance |
 | `game/terrain.gd` | Immutable height field, low-poly mesh, matching ground collider |

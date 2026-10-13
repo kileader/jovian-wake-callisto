@@ -24,7 +24,11 @@ if (-not $GodotPath -or -not (Test-Path -LiteralPath $GodotPath)) {
 switch ($Action) {
     'play' { & $GodotPath --path $projectRoot }
     'check' { & $GodotPath --headless --path $projectRoot --editor --import --quit }
-    'test' { & $GodotPath --headless --path $projectRoot --script res://tests/run_playground.gd }
+    'test' {
+        & $GodotPath --headless --path $projectRoot --script res://tests/run_startup.gd
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        & $GodotPath --headless --path $projectRoot --script res://tests/run_playground.gd
+    }
     'windows' {
         New-Item -ItemType Directory -Path (Join-Path $projectRoot 'builds\windows') -Force | Out-Null
         & $GodotPath --headless --path $projectRoot --export-release 'Windows Desktop'
