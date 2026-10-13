@@ -4,7 +4,17 @@ A small first-person Godot 4 experiment: stand on Callisto, see Jupiter, drive a
 
 ![Callisto landing site and rover, rendered in Godot](docs/playground.png)
 
-This is a separate project from the working TypeScript cruise deckbuilder in `../jovian-wake`. It tests movement, scale, and rover feel; it does not commit Jovian Wake to a survival/crafting game or a particular long-term design.
+**[Play in your browser](https://kileader.github.io/jovian-wake-callisto/)** · **[GitHub repository](https://github.com/kileader/jovian-wake-callisto)**
+
+This is a separate project from the working [TypeScript cruise deckbuilder](https://github.com/kileader/jovian-wake). It tests movement, scale, and rover feel; it does not commit Jovian Wake to a survival/crafting game or a particular long-term design.
+
+## Play in a browser
+
+Open the browser link above in a desktop browser with WebGL 2 support. Click the game to begin and capture the mouse. For a gamepad, press a button to let the browser detect it, then use **Menu / Start** to resume the game. The same survey and controls are available as in the Windows build. Browsers can differ in controller mappings; reconnecting the controller and pressing a button can help detection.
+
+Esc pauses/releases the mouse; click the game to capture it again. This prototype has no touch controls. It needs no account, API key, or paid inference.
+
+The Pages workflow imports Godot 4.7.2, runs the gameplay checks, exports a single-threaded Compatibility/WebGL build, and deploys it on pushes to `main`. This does not require custom cross-origin isolation headers. Windows builds remain local generated artifacts; the repository contains the source and documentation.
 
 ## Play on Windows
 
@@ -63,10 +73,13 @@ The terrain is an authored mathematical playground, not a reconstruction of Call
 .\tools\godot.ps1 check
 .\tools\godot.ps1 test
 .\tools\godot.ps1 windows
+.\tools\godot.ps1 web
 .\tools\godot.ps1 capture
 ```
 
 Set `CALLISTO_GODOT` or pass `-GodotPath 'C:\path\to\godot.exe'` to choose another compatible engine. Windows export needs matching Godot export templates. Captures require a graphical renderer and write ignored PNGs to `artifacts/`.
+
+For a local browser preview after exporting Web, run `node tools/preview-web.cjs` and open `http://127.0.0.1:4175/jovian-wake-callisto/`.
 
 Automated checks run the actual 3D collision world and simulated keyboard/gamepad events. They cover landing, walking/stopping, jump/gravity and conserved horizontal momentum, rover range and seating, trigger driving/reverse, steering/braking, stick drift/look, visor zoom, pause/reset, blocked exits, terrain boundaries, crater collision, fall recovery, astronomical apparent sizes, driving the survey approach, deployment restrictions, returning, and resetting the excursion. They do not establish physical controller compatibility or perceived handling comfort. Those require manual playtesting.
 

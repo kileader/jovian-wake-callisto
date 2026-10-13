@@ -32,7 +32,9 @@ func _ready() -> void:
 	add_child(astronaut)
 	add_child(hud)
 	reset_site()
-	if DisplayServer.get_name() != "headless" and capture_mouse:
+	if OS.has_feature("web"):
+		set_paused(true) # Pointer lock must begin inside a browser input event.
+	elif DisplayServer.get_name() != "headless" and capture_mouse:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func make_material(color: Color, emission: float = 0.0) -> StandardMaterial3D:
@@ -271,7 +273,12 @@ func set_paused(value: bool) -> void:
 	astronaut.set_physics_process(not paused)
 	rover.set_physics_process(not paused)
 	if DisplayServer.get_name() != "headless" and capture_mouse:
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if paused else Input.MOUSE_MODE_CAPTURED
+		if paused:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		elif OS.has_feature("web"):
+			Input.mouse_mode = Input.MOUSE_MODE_HIDDEN # Gamepad resume needs no pointer lock.
+		else:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_inside_tree() and is_instance_valid(hud):
@@ -291,6 +298,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif paused:
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			set_paused(false)
+			if capture_mouse:
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	elif OS.has_feature("web") and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if capture_mouse:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	elif event.is_action_pressed("interact"):
 		interact()
 	elif event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:

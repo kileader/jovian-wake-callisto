@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('play', 'check', 'test', 'windows', 'capture')]
+    [ValidateSet('play', 'check', 'test', 'windows', 'web', 'capture')]
     [string]$Action = 'play',
     [string]$GodotPath = $env:CALLISTO_GODOT
 )
@@ -28,6 +28,10 @@ switch ($Action) {
     'windows' {
         New-Item -ItemType Directory -Path (Join-Path $projectRoot 'builds\windows') -Force | Out-Null
         & $GodotPath --headless --path $projectRoot --export-release 'Windows Desktop'
+    }
+    'web' {
+        New-Item -ItemType Directory -Path (Join-Path $projectRoot 'builds\web') -Force | Out-Null
+        & $GodotPath --headless --path $projectRoot --export-release 'Web'
     }
     'capture' {
         New-Item -ItemType Directory -Path (Join-Path $projectRoot 'artifacts') -Force | Out-Null
