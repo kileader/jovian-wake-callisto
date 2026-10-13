@@ -6,6 +6,8 @@ const RUN_SPEED := 5.8
 const JUMP_SPEED := 1.65 # ~1.1 m ascent, ~2.7 s flight on level ground.
 const MOUSE_SENSITIVITY := 0.0022
 const PAD_LOOK_SPEED := 2.1
+const NORMAL_FOV := 75.0
+const ZOOM_FOV := 20.0
 
 var head: Node3D
 var camera: Camera3D
@@ -33,7 +35,7 @@ func _ready() -> void:
 	head.position.y = 1.65
 	add_child(head)
 	camera = Camera3D.new()
-	camera.fov = 75.0
+	camera.fov = NORMAL_FOV
 	camera.near = 0.06
 	camera.far = 8000.0
 	head.add_child(camera)
@@ -60,6 +62,7 @@ func _physics_process(delta: float) -> void:
 	step_motion(delta, movement, jumping, running)
 
 func step_motion(delta: float, movement: Vector2, jumping: bool, running: bool = false) -> void:
+	var grounded := is_on_floor()
 	coyote_time = 0.12 if is_on_floor() else maxf(0.0, coyote_time - delta)
 	jump_buffer = 0.12 if jumping else maxf(0.0, jump_buffer - delta)
 	if is_on_floor() and velocity.y < 0.0:
@@ -71,9 +74,12 @@ func step_motion(delta: float, movement: Vector2, jumping: bool, running: bool =
 		coyote_time = 0.0
 	var desired := transform.basis * Vector3(movement.x, 0.0, movement.y)
 	desired *= RUN_SPEED if running else WALK_SPEED
-	var acceleration := 16.0 if is_on_floor() else 3.4
-	velocity.x = move_toward(velocity.x, desired.x, acceleration * delta)
-	velocity.z = move_toward(velocity.z, desired.z, acceleration * delta)
+	# Boots provide horizontal force only while grounded. Turning the camera,
+	# releasing the stick, or pressing the opposite direction cannot brake or
+	# redirect a ballistic jump in vacuum. Wall collisions can still stop it.
+	if grounded:
+		velocity.x = move_toward(velocity.x, desired.x, 16.0 * delta)
+		velocity.z = move_toward(velocity.z, desired.z, 16.0 * delta)
 	move_and_slide()
 
 func set_seated(seated: bool) -> void:

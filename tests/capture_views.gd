@@ -35,4 +35,13 @@ func run() -> void:
 	game.exit_rover()
 	game.note = ""
 	await shot("rover-exit")
+	Input.action_press("visor_zoom")
+	game.astronaut.camera.fov = 20.0
+	game.astronaut.camera.look_at(game.sky_objects.get_node("Jupiter").global_position, Vector3.UP)
+	await shot("jupiter-visor")
+	game.astronaut.camera.look_at(game.sky_objects.get_node("Sun").global_position, Vector3.UP)
+	await shot("sun-visor")
+	game.astronaut.camera.look_at(game.sky_objects.get_node("Ganymede").global_position, Vector3.UP)
+	await shot("ganymede-visor")
+	Input.action_release("visor_zoom")
 	quit()

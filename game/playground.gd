@@ -5,8 +5,7 @@ const Terrain = preload("res://game/terrain.gd")
 const Astronaut = preload("res://game/astronaut.gd")
 const Rover = preload("res://game/rover.gd")
 const HUD = preload("res://game/hud.gd")
-const JUPITER_DIRECTION := Vector3(-0.25, 0.35, -0.9)
-const SUN_DIRECTION := Vector3(-0.65, 0.28, 0.42)
+const JovianSky = preload("res://game/sky.gd")
 const ENTER_DISTANCE := 3.8
 const SAFE_RADIUS := 108.0
 
@@ -83,59 +82,14 @@ func create_environment() -> void:
 	var sunlight := DirectionalLight3D.new()
 	sunlight.name = "DistantSun"
 	add_child(sunlight)
-	sunlight.look_at(-SUN_DIRECTION, Vector3.UP)
+	sunlight.look_at(-JovianSky.SUN_DIRECTION, Vector3.UP)
 	sunlight.light_color = Color(1.0, 0.91, 0.78)
 	sunlight.light_energy = 1.35
 	sunlight.shadow_enabled = true
 	sunlight.directional_shadow_max_distance = 130.0
 	sunlight.shadow_bias = 0.03
-	sky_objects = Node3D.new()
-	sky_objects.name = "DistantSky"
+	sky_objects = JovianSky.new()
 	add_child(sky_objects)
-	var sphere := SphereMesh.new()
-	# Diameter subtends ~4.3 degrees, approximately Jupiter seen from Callisto.
-	sphere.radius = 180.0
-	sphere.height = 360.0
-	sphere.radial_segments = 64
-	sphere.rings = 32
-	var clouds := ShaderMaterial.new()
-	clouds.shader = preload("res://game/jupiter.gdshader")
-	var jupiter := add_mesh(sky_objects, sphere, JUPITER_DIRECTION.normalized() * 4800.0, clouds)
-	jupiter.name = "Jupiter"
-	jupiter.rotation.z = -0.07
-	jupiter.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var sun_mesh := SphereMesh.new()
-	sun_mesh.radius = 5.2
-	sun_mesh.height = 10.4
-	var sun_material := make_material(Color(1.0, 0.95, 0.82), 1.0)
-	sun_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	var sun := add_mesh(sky_objects, sun_mesh, SUN_DIRECTION.normalized() * 6000.0, sun_material)
-	sun.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# Sparse faint stars; deterministic and batched in one draw call.
-	var stars := MultiMesh.new()
-	stars.transform_format = MultiMesh.TRANSFORM_3D
-	stars.use_colors = true
-	var star_mesh := SphereMesh.new()
-	star_mesh.radius = 1.4
-	star_mesh.height = 2.8
-	star_mesh.radial_segments = 4
-	star_mesh.rings = 2
-	stars.mesh = star_mesh
-	stars.instance_count = 180
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 7331
-	for i in range(stars.instance_count):
-		var direction := Vector3(rng.randf_range(-1, 1), rng.randf_range(0.08, 1), rng.randf_range(-1, 1)).normalized()
-		stars.set_instance_transform(i, Transform3D(Basis(), direction * 6500.0))
-		stars.set_instance_color(i, Color(0.35, 0.4, 0.46) * rng.randf_range(0.5, 1.0))
-	var star_field := MultiMeshInstance3D.new()
-	star_field.multimesh = stars
-	var star_material := make_material(Color.WHITE)
-	star_material.vertex_color_use_as_albedo = true
-	star_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	star_field.material_override = star_material
-	star_field.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	sky_objects.add_child(star_field)
 
 func create_landmarks() -> void:
 	var white := make_material(Color(0.62, 0.66, 0.65))
@@ -235,6 +189,7 @@ func reset_site() -> void:
 	astronaut.pitch = 0.04
 	astronaut.head.rotation.x = astronaut.pitch
 	astronaut.camera.make_current()
+	astronaut.camera.fov = Astronaut.NORMAL_FOV
 	show_note("Walk to the rover. Jupiter is ahead.", 4.0)
 
 func near_rover() -> bool:
@@ -333,6 +288,9 @@ func _process(delta: float) -> void:
 	var camera: Camera3D = rover.camera if rover.occupied else astronaut.camera
 	sky_objects.global_position = camera.global_position
 	if not paused:
+		if not rover.occupied:
+			var target_fov: float = Astronaut.ZOOM_FOV if Input.is_action_pressed("visor_zoom") else Astronaut.NORMAL_FOV
+			astronaut.camera.fov = lerpf(astronaut.camera.fov, target_fov, minf(1.0, delta * 10.0))
 		note_time = maxf(0.0, note_time - delta)
 		if note_time <= 0.0:
 			note = ""
@@ -342,4 +300,7 @@ func _process(delta: float) -> void:
 	if maxf(absf(body.position.x), absf(body.position.z)) > 103.0 and note.is_empty():
 		note = "Survey boundary — turn back toward the landing site."
 		note_time = 0.15
-	hud.update(rover.occupied, near_rover(), rover.speed, paused, note)
+	hud.update(rover.occupied, near_rover(), rover.speed, paused, note, not rover.occupied and astronaut.camera.fov < 50.0)
+	if not rover.occupied and astronaut.camera.fov < 50.0:
+		var target: String = sky_objects.focused_body(camera)
+		hud.status.text += "   /   VISOR" + (" — " + target.to_upper() if not target.is_empty() else "")

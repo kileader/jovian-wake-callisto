@@ -15,6 +15,9 @@ static func install() -> void:
 	bind("sprint", [key(KEY_SHIFT), button(JOY_BUTTON_LEFT_SHOULDER)])
 	bind("accelerate", [axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)], 0.08)
 	bind("reverse", [axis(JOY_AXIS_TRIGGER_LEFT, 1.0)], 0.08)
+	var right_mouse := InputEventMouseButton.new()
+	right_mouse.button_index = MOUSE_BUTTON_RIGHT
+	bind("visor_zoom", [right_mouse, axis(JOY_AXIS_TRIGGER_LEFT, 1.0)], 0.08)
 	bind("brake", [key(KEY_SPACE), button(JOY_BUTTON_B)])
 	bind("pause_playground", [key(KEY_ESCAPE), button(JOY_BUTTON_START)])
 	bind("reset_playground", [key(KEY_R), button(JOY_BUTTON_Y)])

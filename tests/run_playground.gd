@@ -1,6 +1,7 @@
 extends SceneTree
 
 const Playground = preload("res://game/playground.gd")
+const JovianSky = preload("res://game/sky.gd")
 var game
 var checks := 0
 var failures := 0
@@ -49,6 +50,14 @@ func run() -> void:
 	check(game.astronaut.camera.current, "Start in first person")
 	check(game.rover.wheels.size() == 6, "Six rover wheels")
 	check(not game.interact(), "Cannot enter the rover from outside interaction range")
+	check(absf(JovianSky.angular_diameter(71492.0, 1882700.0) - 4.35245) < 0.0001, "Jupiter angular diameter uses real radius and distance")
+	check(absf(JovianSky.angular_diameter(JovianSky.SUN_RADIUS_KM, JovianSky.SUN_DISTANCE_KM) - 0.102514) < 0.00001, "Solar disk uses its angular diameter at Jupiter")
+	var jupiter = game.sky_objects.get_node("Jupiter")
+	check(jupiter.mesh.height < jupiter.mesh.radius * 2.0, "Jupiter is an oblate sphere")
+	for moon in JovianSky.MOONS:
+		var body = game.sky_objects.get_node(moon.name)
+		var expected_ratio: float = float(moon.radius) / JovianSky.moon_relative(moon).length()
+		check(absf(body.mesh.radius / body.position.length() - expected_ratio) < 0.000001, "%s apparent size follows observer distance" % moon.name)
 
 	var start: Vector3 = game.astronaut.position
 	action("move_forward", true)
@@ -69,6 +78,32 @@ func run() -> void:
 	check(game.astronaut.position.y > ground_y + 0.95, "Low-gravity jump has a modest apex")
 	await frames(110)
 	check(game.astronaut.is_on_floor(), "Jump lands without sinking through terrain")
+	game.reset_site()
+	await frames(35)
+	action("move_forward", true)
+	await frames(40)
+	pad_button(JOY_BUTTON_A, true)
+	await frames(2)
+	pad_button(JOY_BUTTON_A, false)
+	action("move_forward", false)
+	var ballistic_velocity := Vector2(game.astronaut.velocity.x, game.astronaut.velocity.z)
+	action("move_back", true)
+	game.astronaut.look(Vector2(1.0, 0.0))
+	await frames(35)
+	check(Vector2(game.astronaut.velocity.x, game.astronaut.velocity.z).is_equal_approx(ballistic_velocity), "Turning and opposite input cannot redirect a ballistic jump")
+	action("move_back", false)
+	await frames(35)
+	check(Vector2(game.astronaut.velocity.x, game.astronaut.velocity.z).is_equal_approx(ballistic_velocity), "Releasing input cannot brake in midair")
+	await frames(130)
+	check(game.astronaut.is_on_floor() and absf(game.astronaut.velocity.z) < 0.01, "Boots brake only after landing")
+	game.reset_site()
+	await frames(35)
+	pad_axis(JOY_AXIS_TRIGGER_LEFT, 1.0)
+	await frames(30)
+	pad_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+	check(game.astronaut.camera.fov < 21.0, "LT zooms the visor on foot")
+	await frames(40)
+	check(game.astronaut.camera.fov > 74.0, "Releasing LT restores normal field of view")
 
 	# Recenter on the rover, and use the actual gamepad input path for entry.
 	game.astronaut.position = game.rover.position + Vector3(2.3, 0.08, 0.0)
@@ -102,6 +137,7 @@ func run() -> void:
 	await frames(90)
 	pad_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
 	check(game.rover.speed < -4.0 and game.rover.speed >= -4.51, "LT reverses with a lower speed cap")
+	check(is_equal_approx(game.rover.camera.fov, 78.0), "LT reverses without zooming the rover camera")
 
 	pad_button(JOY_BUTTON_X, true)
 	await frames(2)
