@@ -105,10 +105,13 @@ func create_landmarks() -> void:
 	for x in [-11.3, -6.7]:
 		box(self, Vector3(0.45, 0.45, 3.5), Vector3(x, 0.2, 5.0), charcoal)
 	var plaque := Label3D.new()
+	plaque.name = "ModuleSign"
 	plaque.text = "WAKE / 01"
 	plaque.font_size = 64
 	plaque.pixel_size = 0.005
 	plaque.position = Vector3(-7.0, 2.2, 2.86)
+	plaque.rotation.y = PI
+	plaque.double_sided = false
 	plaque.modulate = Color(0.8, 0.9, 0.91)
 	add_child(plaque)
 	box(self, Vector3(0.12, 6.0, 0.12), Vector3(-14.0, 3.0, 9.0), white)

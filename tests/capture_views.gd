@@ -24,6 +24,12 @@ func run() -> void:
 	game.paused = false # Freeze bodies, retain normal HUD for the capture.
 	game.note = ""
 	await shot("on-foot")
+	game.astronaut.position = Vector3(-9.0, 0.07, -4.0)
+	game.astronaut.camera.look_at(Vector3(-9.0, 1.8, 3.0), Vector3.UP)
+	await shot("building-sign")
+	game.reset_site()
+	game.note = ""
+	game.astronaut.camera.rotation = Vector3.ZERO
 	game.astronaut.position = Vector3(7, 0.07, -5)
 	game.astronaut.rotation.y = 0.9
 	game.astronaut.pitch = -0.14
