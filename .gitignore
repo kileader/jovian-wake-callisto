@@ -1,0 +1,6 @@
+.godot/
+.runtime/
+builds/
+artifacts/
+*.tmp
+export_credentials.cfg
